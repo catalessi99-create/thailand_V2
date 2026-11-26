@@ -1,0 +1,44 @@
+
+name: Crea APK Thailandia V2
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scarica progetto
+        uses: actions/checkout@v4
+
+      - name: Configura Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configura Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Estrai progetto
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -iname '*.zip' | head -n 1)
+          test -n "$ZIP_FILE"
+          mkdir sorgente
+          unzip -q "$ZIP_FILE" -d sorgente
+          PROJECT_DIR=$(dirname "$(find sorgente -name settings.gradle.kts -print -quit)")
+          test -n "$PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+
+      - name: Compila APK
+        run: cd "$PROJECT_DIR" && gradle assembleDebug
+
+      - name: Salva APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Thailandia-V2-APK
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
